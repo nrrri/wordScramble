@@ -17,6 +17,7 @@ class ViewController: UITableViewController {
         super.viewDidLoad()
         
         navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(promptForAnswer))
+        navigationItem.leftBarButtonItem = UIBarButtonItem(barButtonSystemItem: .play , target: self, action: #selector(startGame))
         
         if let startWordsURL = Bundle.main.url(forResource: "start", withExtension: "txt") {
             if let startWords = try? String(contentsOf: startWordsURL) {
@@ -28,12 +29,12 @@ class ViewController: UITableViewController {
             allWords = ["silkworm"]
         }
         
-       startGame()
+//       startGame()
            
     }
     
     // FUNCTIONS
-    func startGame() {
+    @objc func startGame() {
         title = allWords.randomElement()?.uppercased()
         
         usedWords.removeAll(keepingCapacity: true)
@@ -60,27 +61,38 @@ class ViewController: UITableViewController {
         let errorTitle: String
         let errorMessage: String
         
-        if isPossible(word: lowerAnswer) {
-            if isOriginal(word: lowerAnswer) {
-                if isReal(word: lowerAnswer) {
-                    usedWords.insert(answer, at: 0)
-                    
-                    let indexPath = IndexPath(row: 0, section: 0)
-                    tableView.insertRows(at: [indexPath], with: .automatic)
-                    
-                    return
+        if (lowerAnswer == title!.lowercased()) {
+            guard let title = title else {return}
+            errorTitle = "Word repeated"
+            errorMessage = "Can't use the word from \(title.lowercased())"
+        } else {
+            if checkWordLength(word: lowerAnswer) {
+                if isPossible(word: lowerAnswer) {
+                    if isOriginal(word: lowerAnswer) {
+                        if isReal(word: lowerAnswer) {
+                            usedWords.insert(answer, at: 0)
+                            
+                            let indexPath = IndexPath(row: 0, section: 0)
+                            tableView.insertRows(at: [indexPath], with: .automatic)
+                            
+                            return
+                        } else {
+                            errorTitle = "Word not recognized"
+                            errorMessage = "You can't just make them up, you know!"
+                        }
+                    } else {
+                        errorTitle = "Word already used"
+                        errorMessage = "Be more original!"
+                    }
                 } else {
-                    errorTitle = "Word not recognized"
-                    errorMessage = "You can't just make them up, you know!"
+                    guard let title = title else {return}
+                    errorTitle = "Word not possible"
+                    errorMessage = "You can't spell that word from \(title.lowercased())"
                 }
             } else {
-                errorTitle = "Word already used"
-                errorMessage = "Be more original!"
+                errorTitle = "Word too short"
+                errorMessage = "Word is shorter than 3 letters!"
             }
-        } else {
-            guard let title = title else {return}
-            errorTitle = "Word not possible"
-            errorMessage = "You can't spell that word from \(title.lowercased())"
         }
         
         let ac = UIAlertController(title: errorTitle, message: errorMessage, preferredStyle: .alert)
@@ -113,6 +125,13 @@ class ViewController: UITableViewController {
         return misspelledRange.location == NSNotFound
     }
     
+    func checkWordLength(word: String) -> Bool {
+        let word = word
+        if word.count <= 3 {
+            return false
+        }
+        return true
+    }
     
     // TABLE VIEW
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
